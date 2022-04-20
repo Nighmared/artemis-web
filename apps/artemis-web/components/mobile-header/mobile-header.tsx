@@ -109,6 +109,9 @@ const MobileHeader = (props) => {
               <li className="menu-item">
                 <Link href="/hijacks">Hijacks</Link>
               </li>
+              <li className="menu-item">
+                <Link href="/distrstats">Distributed Stats</Link>
+              </li>
             </>
           )}
           {user && user.role === 'admin' && (

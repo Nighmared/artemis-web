@@ -66,6 +66,11 @@ const DesktopHeader = (props) => {
                   Hijacks
                 </Link>
               </li>
+              <li className={getItemClass('/distrstats')}>
+                <Link href="/distrstats" className="nav-link">
+                  Distributed Hijack Stats
+                </Link>
+              </li>
             </>
           )}
         </ul>
