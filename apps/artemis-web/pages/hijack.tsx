@@ -126,10 +126,7 @@ const ViewHijackPage = (props) => {
       {user && hijackExists && (
         <Media queries={GLOBAL_MEDIA_QUERIES}>
           {(matches) => (
-            <div
-              className="container overview col-lg-12"
-              // style={{ paddingTop: '120px' }}
-            >
+            <div className="container overview col-lg-12">
               <div className="row">
                 <div className="col-lg-1" />
                 <div className="col-lg-10">
