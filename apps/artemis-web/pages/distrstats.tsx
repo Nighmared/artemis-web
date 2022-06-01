@@ -37,19 +37,18 @@ function FormatTimeStamp(props: any) {
 
 const LIVERELOADDELAY = 600_000; //10 minutes between live reloads
 const TIMESPAN_VARS = [
-    { repr: "10min", description:"10 minutes", minutes: 10 },
-    { repr: "1h", description:"hour", minutes: 60 },
-    { repr: "2h",description:"2 hours", minutes: 120 },
-    { repr: "2d",description:"2 days", minutes: 2880},
-    { repr: "1 Week", description: "week", minutes: 10080},
-    { repr: "1 Month", description: "month", minutes: 44640},
+    { repr: "10min", description: "10 minutes", minutes: 10 },
+    { repr: "1h", description: "hour", minutes: 60 },
+    { repr: "2h", description: "2 hours", minutes: 120 },
+    { repr: "2d", description: "2 days", minutes: 2880 },
+    { repr: "1 Week", description: "week", minutes: 10080 },
+    { repr: "1 Month", description: "month", minutes: 44640 },
 ];
 
 const DistrStatsPage = (props: any) => {
 
     const [ready, setReady] = useState(false);
-    const [bitcoinNumHijacked, setBitcoinNumHijacked] = useState(0);
-    const [bitcoinTotalNodes, setBitcoinTotalNodes] = useState(0);
+    const [overlays, setOverlays] = useState([]);
     const [lastUpdated, setLastUpdated] = useState("Never");
     const [isLive, setIsLive] = useState(true);
     const [intervalId, setIntervalId] = useState(-1);
@@ -60,21 +59,52 @@ const DistrStatsPage = (props: any) => {
 
     function handle_stats(resultjson) {
         setLastUpdated(resultjson.timestamp);
-        setBitcoinNumHijacked(resultjson.bitcoin.hijacked_ips.length);
-        setBitcoinTotalNodes(resultjson.bitcoin.total_nodes);
+
+        const tmp_overlays = [];
+        for (const statskey in resultjson) {
+            if (statskey === "timestamp") {
+                continue;
+            }
+            tmp_overlays.push({ name: statskey.charAt(0).toUpperCase() + statskey.slice(1), hijacked_count: resultjson[statskey].hijacked_ips.length, total_nodes: resultjson[statskey].total_nodes });
+        }
+        setOverlays(tmp_overlays);
         setReady(true);
     }
 
-    function BitcoinStats() {
+    const OverlayStats = () => {
         if (ready) {
-            return <p>
-                {bitcoinNumHijacked} out of {bitcoinTotalNodes} currently 
-            online Bitcoin Nodes have been affected by potential hijacks in 
-            the last {TIMESPAN_VARS[hijackTimespanIndex].description}.
-            </p>;
+            return <>
+                {
+                    overlays.map((overlay: any) => (
+                        <div className="col-lg-5">
+                            <div className="card">
+                                <div className="card-header" style={{ backgroundColor: "white" }}>
+                                    <div className="row">
+                                        <h2> {overlay.name}</h2>
+                                    </div>
+                                </div>
+                                <div className="card-body">
+                                    <div className="row">
+                                        {/* <div className="col-sm-1" /> */}
+                                        <div className="col-lg-10">
+                                            <p>
+                                                {overlay.hijacked_count} out of {overlay.total_nodes} currently
+                                                online {overlay.name} Nodes have been affected by potential hijacks in
+                                                the last {TIMESPAN_VARS[hijackTimespanIndex].description}.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                }
+                </>
         }
+
         return <p>Loading...</p>;
     }
+
 
     function toggleLive() {
         if (isLive) {
@@ -159,10 +189,10 @@ const DistrStatsPage = (props: any) => {
                                                 TIMESPAN_VARS.map(
                                                     (timespan, index) => (
                                                         <option
-                                                        value={index}>
+                                                            value={index}>
                                                             {timespan.repr}
                                                         </option>
-                                                        )
+                                                    )
                                                 )
                                             }
                                         </select>
@@ -170,42 +200,10 @@ const DistrStatsPage = (props: any) => {
                                 </div>
                                 <div className="row">
                                     <div className="col-lg-1" />
-                                    <div className="col-lg-5">
-                                        <div className="card">
-                                            <div className="card-header" style={{ backgroundColor: "white" }}>
-                                                <div className="row">
-                                                    <h2> Bitcoin</h2>
-                                                </div>
-                                            </div>
-                                            <div className="card-body">
-                                                <div className="row">
-                                                    {/* <div className="col-sm-1" /> */}
-                                                    <div className="col-lg-10">
-                                                        <BitcoinStats />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="col-lg-5">
-                                        <div className="card">
-                                            <div className="card-header" style={{ backgroundColor: "white" }}>
-                                                <div className="row">
-                                                    <h2> Some other distr. System</h2>
-                                                </div>
-                                            </div>
-                                            <div className="card-body">
-                                                <div className="row">
-                                                    {/* <div className="col-sm-1" /> */}
-                                                    <div className="col-lg-10">
-                                                        <p>
-                                                            TBD
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+
+                                    <OverlayStats />
+
+                                    
                                 </div>
                                 <br />
                                 <div className="row">
