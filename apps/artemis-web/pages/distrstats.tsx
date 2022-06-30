@@ -10,20 +10,22 @@ import {
 import { ToastContainer } from 'react-toastify';
 import { FormGroup, FormControlLabel } from '@material-ui/core';
 import { AntSwitch } from '../utils/styles';
+import Image from 'next/image';
 
 
 
 
-function get_stats(token, timespan) {
+function get_stats(token) {
     const requestOptions = {
         "headers": {
             "secret": token,
-            "timespan": timespan
         }
     }
     const req = fetch(`https://${window.location.hostname}:${window.location.port}/get_stats`, requestOptions)
     return req
 }
+
+
 
 function FormatTimeStamp(props: any) {
     if (props.ready) {
@@ -36,14 +38,6 @@ function FormatTimeStamp(props: any) {
 }
 
 const LIVERELOADDELAY = 600_000; //10 minutes between live reloads
-const TIMESPAN_VARS = [
-    { repr: "10min", description: "10 minutes", minutes: 10 },
-    { repr: "1h", description: "hour", minutes: 60 },
-    { repr: "2h", description: "2 hours", minutes: 120 },
-    { repr: "2d", description: "2 days", minutes: 2880 },
-    { repr: "1 Week", description: "week", minutes: 10080 },
-    { repr: "1 Month", description: "month", minutes: 44640 },
-];
 
 const DistrStatsPage = (props: any) => {
 
@@ -53,6 +47,7 @@ const DistrStatsPage = (props: any) => {
     const [isLive, setIsLive] = useState(true);
     const [intervalId, setIntervalId] = useState(-1);
     const [hijackTimespanIndex, setHijackTimespanIndex] = useState(0);
+    const [jwtToken, setjwtToken] = useState("");
     if (isLive && intervalId === -1) {
         setIntervalId(Number(setInterval(LoadStats, LIVERELOADDELAY)));
     }
@@ -65,10 +60,15 @@ const DistrStatsPage = (props: any) => {
             if (statskey === "timestamp") {
                 continue;
             }
-            tmp_overlays.push({ name: statskey.charAt(0).toUpperCase() + statskey.slice(1), hijacked_count: resultjson[statskey].hijacked_ips.length, total_nodes: resultjson[statskey].total_nodes });
+            tmp_overlays.push({ name: statskey.charAt(0).toUpperCase() + statskey.slice(1), hijacked_count: Object.keys(resultjson[statskey].hijacked_ips).length, total_nodes: resultjson[statskey].total_nodes });
         }
         setOverlays(tmp_overlays);
         setReady(true);
+    }
+
+
+    function get_overlay_graph(overlay_name):string {
+        return `https://${window.location.hostname}:${window.location.port}/get_graph?secret=${jwtToken}&overlay=${overlay_name}`
     }
 
     const OverlayStats = () => {
@@ -88,21 +88,27 @@ const DistrStatsPage = (props: any) => {
                                         {/* <div className="col-sm-1" /> */}
                                         <div className="col-lg-10">
                                             <p>
-                                                {overlay.hijacked_count} out of {overlay.total_nodes} currently
-                                                online {overlay.name} Nodes have been affected by potential hijacks in
-                                                the last {TIMESPAN_VARS[hijackTimespanIndex].description}.
+                                                {overlay.hijacked_count} out of {overlay.total_nodes} nodes that were online during the configured<br />
+                                                timespan were affected by a hijack during the monitored time.                                        
                                             </p>
-                                        </div>
+                                            
+                                        </div>  
+                                        <img style={{width: "100%"}} src={get_overlay_graph(overlay.name)}></img>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     ))
                 }
-                </>
+            </>
         }
 
         return <p>Loading...</p>;
+    }
+
+    function store_token(t:string):string {
+        setjwtToken(t);
+        return t;
     }
 
 
@@ -125,10 +131,12 @@ const DistrStatsPage = (props: any) => {
         fetch(`https://${window.location.hostname}:${window.location.port}/api/auth/jwt`)
             .then(res => res.json())
             .then(r => r.accessToken)
-            .then(t => get_stats(t, TIMESPAN_VARS[hijackTimespanIndex].minutes))
+            .then(t => store_token(t))
+            .then(t => get_stats(t))
             .then(res => res.json())
             .then(r => handle_stats(r));
     }
+    
 
     useEffect(LoadStats, [hijackTimespanIndex]);
     useEffect(() => {
@@ -180,7 +188,7 @@ const DistrStatsPage = (props: any) => {
                                         <hr />
                                     </div>
                                 </div>
-                                <div className="row">
+                                {/* <div className="row">
                                     <div className="col-lg-1" />
                                     <div className="col-lg-5">
                                         <label htmlFor="timespan">Timespan of Hijacks to consider</label>
@@ -197,13 +205,13 @@ const DistrStatsPage = (props: any) => {
                                             }
                                         </select>
                                     </div>
-                                </div>
+                                </div> */}
                                 <div className="row">
                                     <div className="col-lg-1" />
 
                                     <OverlayStats />
+                                
 
-                                    
                                 </div>
                                 <br />
                                 <div className="row">
